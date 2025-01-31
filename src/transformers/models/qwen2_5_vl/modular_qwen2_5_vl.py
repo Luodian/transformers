@@ -237,7 +237,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
             context_dim=config.hidden_size,
             spatial_merge_size=config.spatial_merge_size,
         )
-        self.gradient_checkpointing = False
+        self.gradient_checkpointing = True
 
     def rot_pos_emb(self, grid_thw):
         pos_ids = []
@@ -354,8 +354,8 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
             else:
                 cu_seqlens_now = cu_window_seqlens
             if self.gradient_checkpointing and self.training:
-                hidden_states = self._gradient_checkpointing_func(
-                    blk.__call__, hidden_states, cu_seqlens_now, rotary_pos_emb
+                hidden_states = torch.utils.checkpoint.checkpoint(
+                    blk.__call__, hidden_states, cu_seqlens, rotary_pos_emb, use_reentrant=False
                 )
             else:
                 hidden_states = blk(
